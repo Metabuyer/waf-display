@@ -28,28 +28,40 @@ export class AppComponent {
     }
   }
 
+
+
   async changeListener($event): Promise<void> {
-    let t = await this.readThis($event.target);
-    this.setData(t);
+    await this.readThis($event.target)
+    .then((data) => this.setData(data))
+    .catch((e) => {console.log(e); alert('the file cant be parsed')})
   }
 
   readThis(inputValue: any) {
     let file: File = inputValue.files[0];
     return new Promise((resolve, reject) => {
       let myReader: FileReader = new FileReader();
-      let setData = this.setData;
+      let tryConvertingTojson = (target) => {
+          let string = target.replace(/(\r\n|\n|\r)/gm,",");
+          string[string.length - 1] === "," ? string = string.slice(0, -1) : '';
+          let finalString = '['+ string + ']';
 
+          return finalString;
+
+      }
       let y = myReader.onloadend = function (e) {
 
         let jsonFile;
         try {
           jsonFile = JSON.parse(myReader.result.toString());
         } catch (e) {
-          alert('the file cant be parsed');
-          reject('the file cant be parsed');
+          try {
+            let res = tryConvertingTojson(myReader.result.toString());
+            resolve(JSON.parse(res));
+          } catch (e) {
+            reject(e);
+          }
         }
         resolve(jsonFile);
-        // console.log(jsonIntext);
       }
 
       myReader.readAsText(file);
